@@ -5,6 +5,241 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Martin County Lead Tracker</title>
 <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1F4E79;--blue-mid:#185FA5;--blue-light:#dbeafe;--green:#16a34a;--green-light:#dcfce7;--red:#b91c1c;--red-light:#fee2e2;--orange:#92400e;--orange-light:#fef3c7;--border:#e5e7eb;--text:#111827;--muted:#6b7280;--bg:#fff;--surface:#f9fafb}
+@media(prefers-color-scheme:dark){:root{--border:#374151;--text:#f9fafb;--muted:#9ca3af;--bg:#111827;--surface:#1f2937;--blue-light:#1e3a5f;--green-light:#14532d;--red-light:#7f1d1d;--orange-light:#431407}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--surface);color:var(--text);min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding-bottom:4rem}
+.header{background:var(--blue);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:18px;font-weight:600}
+.header p{font-size:13px;opacity:.8;margin-top:2px}
+.stats{display:flex;gap:8px}
+.stat{background:rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;text-align:center}
+.stat-num{font-size:20px;font-weight:600}
+.stat-label{font-size:11px;opacity:.8}
+.tabs{background:var(--bg);border-bottom:1px solid var(--border);display:flex;padding:0 1.5rem}
+.tab{font-size:13px;padding:11px 16px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.view{display:none}.view.on{display:block}
+.toolbar{background:var(--bg);padding:10px 1.5rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar input{flex:1;min-width:150px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.fb{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.fb.on{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid);font-weight:600}
+.addbtn{margin-left:auto;font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-weight:500}
+.wks{padding:0 1.5rem}
+.wklabel{font-size:11px;color:var(--muted);padding:14px 0 6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:8px}
+.list{display:flex;flex-direction:column;gap:6px;padding:8px 0}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;transition:border-color .15s}
+.card:hover{border-color:#9ca3af}
+.card.done{opacity:.45}
+.card-top{display:flex;align-items:flex-start;gap:10px}
+.chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:1px;background:transparent;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk.on{background:var(--green);border-color:var(--green)}
+.chk.on::after{content:'';display:block;width:5px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px)}
+.cbody{flex:1;min-width:0}
+.cname{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.cmeta{margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.bg{background:var(--red-light);color:var(--red)}
+.bf{background:var(--orange-light);color:var(--orange)}
+.bn{background:var(--green-light);color:var(--green)}
+.bm{background:var(--blue-light);color:var(--blue-mid)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hot{background:#ef4444}.warm{background:#f59e0b}.cool{background:#3b82f6}
+.hnt{font-size:11px;color:var(--blue-mid);font-weight:500}
+.cbtns{display:flex;gap:2px;flex-shrink:0}
+.ibtn{background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:4px 7px;border-radius:6px}
+.ibtn:hover{background:var(--surface);color:var(--text)}
+.notes{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.notes textarea{width:100%;font-size:13px;font-family:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);resize:vertical;min-height:68px;line-height:1.5}
+.notes textarea:focus{outline:none;border-color:var(--blue-mid)}
+.sbtn{margin-top:6px;font-size:12px;padding:5px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-weight:500}
+.saved{font-size:12px;color:var(--green);margin-left:8px}
+.empty{text-align:center;padding:4rem 1rem;color:var(--muted);font-size:14px}
+.settings{padding:1.5rem;max-width:560px}
+.settings h2{font-size:16px;font-weight:600;margin-bottom:4px}
+.settings>p{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6}
+.scard{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem}
+.scard h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.scard>p{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;min-height:28px}
+.tag{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px 3px 12px;font-size:13px}
+.tag button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:0}
+.tag button:hover{color:var(--red)}
+.irow{display:flex;gap:8px}
+.irow input{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);flex:1}
+.irow .go{font-size:13px;padding:6px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-weight:500}
+.infobox{font-size:12px;color:var(--muted);background:var(--blue-light);border-left:3px solid var(--blue-mid);padding:10px 14px;border-radius:0 8px 8px 0;line-height:1.6;margin-top:4px}
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.mbg.on{display:flex}
+.modal{background:var(--bg);border-radius:12px;border:1px solid var(--border);padding:1.5rem;width:100%;max-width:420px}
+.modal h2{font-size:16px;font-weight:600;margin-bottom:1rem}
+.frow{margin-bottom:12px}
+.frow label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500}
+.frow input,.frow select{width:100%;font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem}
+.ok{font-size:13px;padding:7px 20px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-weight:600}
+.cancel{font-size:13px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div><h1>Martin County Lead Tracker</h1><p id="hsub">Loading...</p></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stot">0</div><div class="stat-label">total</div></div>
+      <div class="stat"><div class="stat-num" id="sopen">0</div><div class="stat-label">open</div></div>
+      <div class="stat"><div class="stat-num" id="sdone">0</div><div class="stat-label">done</div></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('leads',this)">Leads</button>
+    <button class="tab" onclick="switchTab('settings',this)">Settings</button>
+  </div>
+  <div id="view-leads" class="view on">
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search leads..." oninput="render()">
+      <button class="fb on" onclick="setF('all',this)">All</button>
+      <button class="fb" onclick="setF('open',this)">Open</button>
+      <button class="fb" onclick="setF('done',this)">Done</button>
+      <button class="fb" onclick="setF('gov',this)">DBPR</button>
+      <button class="fb" onclick="setF('news',this)">News</button>
+      <button class="addbtn" onclick="openM()">+ Add lead</button>
+    </div>
+    <div id="out"></div>
+  </div>
+  <div id="view-settings" class="view">
+    <div class="settings">
+      <h2>Scraper settings</h2>
+      <p>Add ZIP codes or cities and the scraper picks them up next Monday. Saved in your browser.</p>
+      <div class="scard">
+        <h3>ZIP codes</h3>
+        <p>The scraper includes any DBPR business matching these ZIPs.</p>
+        <div class="tags" id="ztags"></div>
+        <div class="irow"><input type="text" id="nzip" placeholder="e.g. 34997" maxlength="5"><button class="go" onclick="addZip()">Add ZIP</button></div>
+      </div>
+      <div class="scard">
+        <h3>Cities</h3>
+        <p>Leads are filtered to businesses in these cities.</p>
+        <div class="tags" id="ctags"></div>
+        <div class="irow"><input type="text" id="ncity" placeholder="e.g. Port St. Lucie"><button class="go" onclick="addCity()">Add city</button></div>
+      </div>
+      <div class="infobox">Settings save in your browser. To update the Monday scraper, also commit a settings.json to the repo with your ZIP codes and cities.</div>
+    </div>
+  </div>
+  <div class="mbg" id="modal">
+    <div class="modal">
+      <h2>Add lead manually</h2>
+      <div class="frow"><label>Business name</label><input type="text" id="fn" placeholder="e.g. Joe's Taco Shack"></div>
+      <div class="frow"><label>Address / city</label><input type="text" id="fa" placeholder="e.g. 123 Ocean Blvd, Stuart"></div>
+      <div class="frow"><label>Source</label><select id="fs"><option>FL DBPR New Food License</option><option>Sunbiz LLC Filing</option><option>Google News</option><option>HometownNewsTC</option><option>Manual</option></select></div>
+      <div class="frow"><label>Priority</label><select id="fp"><option value="hot">Hot</option><option value="warm" selected>Warm</option><option value="cool">Cool</option></select></div>
+      <div class="frow"><label>Notes</label><input type="text" id="fno" placeholder="Optional..."></div>
+      <div class="mbtns"><button class="cancel" onclick="closeM()">Cancel</button><button class="ok" onclick="addLead()">Add lead</button></div>
+    </div>
+  </div>
+</div>
+<script>
+const DZ=['34994','34996','34997','34990','34991','34957','34956'];
+const DC=['Stuart','Palm City','Jensen Beach','Hobe Sound','Indiantown','Port Salerno','Sewalls Point'];
+let leads=[],cfg={zips:[],cities:[]},filt='all',exp={},sav={};
+
+function load(){
+  try{leads=JSON.parse(localStorage.getItem('mc-leads')||'[]');}catch(e){leads=[];}
+  try{cfg=JSON.parse(localStorage.getItem('mc-cfg')||'{}');if(!cfg.zips)cfg.zips=[...DZ];if(!cfg.cities)cfg.cities=[...DC];}catch(e){cfg={zips:[...DZ],cities:[...DC]};}
+  if(!leads.length)seed();
+  render();
+}
+
+function seed(){
+  const w=wk(new Date()),t=new Date().toISOString().split('T')[0];
+  leads=[
+    {id:'1',name:'Coastal Kitchen',address:'2210 SE Federal Hwy, Stuart FL',source:'FL DBPR New Food License',priority:'hot',checked:false,notes:'',date:t,week:w},
+    {id:'2',name:'Palm City Brew Co.',address:'2847 SW Martin Downs Blvd, Palm City',source:'Sunbiz LLC Filing',priority:'hot',checked:false,notes:'',date:t,week:w},
+    {id:'3',name:'Taqueria Jalisco — Jensen Beach',address:'Jensen Beach FL',source:'Google News',priority:'warm',checked:false,notes:'',date:t,week:w},
+    {id:'4',name:'The Biscuit Box Bakery',address:'Hobe Sound FL',source:'HometownNewsTC',priority:'warm',checked:true,notes:'Called — uses Square, open to switching. Follow up in 2 weeks.',date:t,week:w},
+    {id:'5',name:'Gulfstream Sushi Bar',address:'1401 SE Ocean Blvd, Stuart FL',source:'FL DBPR New Food License',priority:'hot',checked:false,notes:'',date:t,week:w}
+  ];
+  persist();
+}
+
+function persist(){localStorage.setItem('mc-leads',JSON.stringify(leads));localStorage.setItem('mc-cfg',JSON.stringify(cfg));}
+
+function wk(d){const dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()+3-(dt.getDay()+6)%7);const w1=new Date(dt.getFullYear(),0,4);return dt.getFullYear()+'-W'+String(1+Math.round(((dt-w1)/86400000-3+(w1.getDay()+6)%7)/7)).padStart(2,'0');}
+function wkLabel(k){if(!k)return'This week';const[yr,w]=k.split('-W');const j=new Date(+yr,0,4);const s=new Date(j.getTime()+(parseInt(w)-1)*7*86400000);s.setDate(s.getDate()-s.getDay()+1);const e=new Date(s.getTime()+6*86400000);const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});return k===wk(new Date())?'This week · '+f(s)+'–'+f(e):'Week of '+f(s)+'–'+f(e);}
+function bc(s){if(!s)return'bm';if(s.includes('DBPR'))return'bg';if(s.includes('Sunbiz'))return'bf';if(['Google News','HometownNewsTC','BusinessDebut'].includes(s))return'bn';return'bm';}
+function bl(s){return{'FL DBPR New Food License':'DBPR','FL DBPR License Portal':'DBPR Portal','Sunbiz LLC Filing':'Sunbiz','Google News':'Google News','HometownNewsTC':'Hometown News','BusinessDebut':'BusinessDebut','Manual':'Manual'}[s]||s||'Manual';}
+
+function switchTab(n,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));el.classList.add('on');document.getElementById('view-'+n).classList.add('on');if(n==='settings')renderSettings();}
+function setF(f,el){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();}
+function toggleCheck(id){const l=leads.find(x=>x.id===id);if(l){l.checked=!l.checked;persist();render();}}
+function toggleExp(id){exp[id]=!exp[id];render();}
+function saveNote(id){const ta=document.getElementById('n'+id);if(!ta)return;const l=leads.find(x=>x.id===id);if(l){l.notes=ta.value;persist();sav[id]=true;render();setTimeout(()=>{delete sav[id];render();},2000);}}
+function delLead(id){if(!confirm('Remove this lead?'))return;leads=leads.filter(x=>x.id!==id);persist();render();}
+function openM(){document.getElementById('modal').classList.add('on');}
+function closeM(){document.getElementById('modal').classList.remove('on');}
+function addLead(){const name=document.getElementById('fn').value.trim();if(!name)return;const now=new Date();leads.unshift({id:Date.now().toString(),name,address:document.getElementById('fa').value.trim(),source:document.getElementById('fs').value,priority:document.getElementById('fp').value,notes:document.getElementById('fno').value.trim(),checked:false,date:now.toISOString().split('T')[0],week:wk(now)});persist();render();closeM();['fn','fa','fno'].forEach(id=>document.getElementById(id).value='');}
+
+function getFilt(){const q=(document.getElementById('search')?.value||'').toLowerCase();return leads.filter(l=>{if(filt==='open'&&l.checked)return false;if(filt==='done'&&!l.checked)return false;if(filt==='gov'&&!l.source?.includes('DBPR')&&!l.source?.includes('Sunbiz'))return false;if(filt==='news'&&!['Google News','HometownNewsTC','BusinessDebut'].includes(l.source))return false;if(q&&!l.name?.toLowerCase().includes(q)&&!(l.address||'').toLowerCase().includes(q)&&!(l.notes||'').toLowerCase().includes(q))return false;return true;});}
+
+function render(){
+  const tot=leads.length,done=leads.filter(l=>l.checked).length;
+  document.getElementById('stot').textContent=tot;
+  document.getElementById('sopen').textContent=tot-done;
+  document.getElementById('sdone').textContent=done;
+  const nw=wk(new Date()),twc=leads.filter(l=>l.week===nw).length;
+  document.getElementById('hsub').textContent=twc+' new lead'+(twc!==1?'s':'')+' · '+wkLabel(nw).toLowerCase();
+  const f=getFilt(),g={};
+  f.forEach(l=>{(g[l.week]=g[l.week]||[]).push(l);});
+  const wks=Object.keys(g).sort().reverse();
+  let html='';
+  if(!f.length){html='<div class="empty">No leads match your filter.</div>';}
+  else wks.forEach(k=>{
+    html+='<div class="wks"><div class="wklabel">'+wkLabel(k)+'</div><div class="list">';
+    g[k].forEach(l=>{
+      const e=exp[l.id];
+      html+='<div class="card'+(l.checked?' done':'')+'">'+
+        '<div class="card-top">'+
+        '<button class="chk'+(l.checked?' on':'')+'" onclick="toggleCheck(''+l.id+'')"></button>'+
+        '<div class="cbody">'+
+        '<div class="cname">'+l.name+'</div>'+
+        '<div class="cmeta">'+
+        '<span class="badge '+bc(l.source)+'">'+bl(l.source)+'</span>'+
+        '<div class="dot '+l.priority+'" title="'+l.priority+'"></div>'+
+        (l.address?'<span>'+l.address+'</span>':'')+
+        (l.notes?'<span class="hnt">has notes</span>':'')+
+        '</div></div>'+
+        '<div class="cbtns">'+
+        '<button class="ibtn" onclick="toggleExp(''+l.id+'')">'+(e?'▲':'▼')+'</button>'+
+        '<button class="ibtn" onclick="delLead(''+l.id+'')">✕</button>'+
+        '</div></div>'+
+        (e?'<div class="notes"><textarea id="n'+l.id+'" placeholder="Call status, POS system, who you spoke to, follow-up date...">'+(l.notes||'')+'</textarea><div><button class="sbtn" onclick="saveNote(''+l.id+'')">Save note</button>'+(sav[l.id]?'<span class="saved">✓ Saved</span>':'')+'</div></div>':'')+
+        '</div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('out').innerHTML=html;
+}
+
+function renderSettings(){
+  document.getElementById('ztags').innerHTML=cfg.zips.map(z=>'<div class="tag">'+z+'<button onclick="rmZip(''+z+'')">x</button></div>').join('');
+  document.getElementById('ctags').innerHTML=cfg.cities.map(c=>'<div class="tag">'+c+'<button onclick="rmCity(''+c+'')">x</button></div>').join('');
+}
+function addZip(){const v=document.getElementById('nzip').value.trim();if(!/^\d{5}$/.test(v)){alert('Enter a valid 5-digit ZIP');return;}if(!cfg.zips.includes(v)){cfg.zips.push(v);persist();renderSettings();}document.getElementById('nzip').value='';}
+function rmZip(z){cfg.zips=cfg.zips.filter(x=>x!==z);persist();renderSettings();}
+function addCity(){const v=document.getElementById('ncity').value.trim();if(!v)return;if(!cfg.cities.includes(v)){cfg.cities.push(v);persist();renderSettings();}document.getElementById('ncity').value='';}
+function rmCity(c){cfg.cities=cfg.cities.filter(x=>x!==c);persist();renderSettings();}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeM();});
+load();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Martin County Lead Tracker</title>
+<style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --blue: #1F4E79; --blue-light: #E6F1FB; --blue-mid: #185FA5;
