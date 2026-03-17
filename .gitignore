@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+leads_raw.json
+*.egg-info/
+venv/
