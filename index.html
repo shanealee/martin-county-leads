@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Martin County Lead Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #1F4E79; --blue-light: #E6F1FB; --blue-mid: #185FA5;
+    --green: #16a34a; --green-light: #E8F5EE;
+    --red: #CC0000; --red-light: #FCEBEB;
+    --orange: #854F0B; --orange-light: #FAEEDA;
+    --gray: #6b7280; --gray-light: #F5F5F5; --gray-border: #E5E7EB;
+    --text: #111827; --text-muted: #6b7280; --bg: #ffffff; --surface: #F9FAFB;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --text: #F9FAFB; --text-muted: #9CA3AF; --bg: #111827; --surface: #1F2937; --gray-border: #374151; --gray-light: #1F2937; --blue-light: #1e3a5f; --green-light: #14532d; --red-light: #7f1d1d; --orange-light: #431407; }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--text); min-height: 100vh; }
+  .app { max-width: 900px; margin: 0 auto; padding: 0 0 4rem; }
+  .header { background: var(--blue); color: #fff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .stats { display: flex; gap: 8px; }
+  .stat { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 14px; text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 600; }
+  .stat-label { font-size: 11px; opacity: 0.8; }
+  .tab-bar { background: var(--bg); border-bottom: 1px solid var(--gray-border); display: flex; padding: 0 1.5rem; }
+  .tab { font-size: 13px; padding: 12px 16px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .view { display: none; } .view.active { display: block; }
+  .toolbar { background: var(--bg); padding: 10px 1.5rem; border-bottom: 1px solid var(--gray-border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .toolbar input { flex: 1; min-width: 160px; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--surface); color: var(--text); }
+  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--gray-border); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+  .filter-btn.active { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); font-weight: 600; }
+  .add-btn { margin-left: auto; font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--bg); color: var(--text); cursor: pointer; white-space: nowrap; font-weight: 500; }
+  .week-section { padding: 0 1.5rem; }
+  .week-label { font-size: 11px; color: var(--text-muted); padding: 14px 0 6px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid var(--gray-border); margin-bottom: 8px; }
+  .leads-list { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+  .lead-card { background: var(--bg); border: 1px solid var(--gray-border); border-radius: 10px; padding: 11px 14px; transition: border-color 0.15s; }
+  .lead-card:hover { border-color: #9CA3AF; }
+  .lead-card.checked { opacity: 0.45; }
+  .lead-top { display: flex; align-items: flex-start; gap: 10px; }
+  .check-btn { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gray-border); cursor: pointer; flex-shrink: 0; margin-top: 1px; background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check-btn.done { background: var(--green); border-color: var(--green); }
+  .check-btn.done::after { content: ''; display: block; width: 6px; height: 10px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translateY(-2px); }
+  .lead-body { flex: 1; min-width: 0; }
+  .lead-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .lead-meta { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-gov { background: var(--red-light); color: var(--red); }
+  .badge-filing { background: var(--orange-light); color: var(--orange); }
+  .badge-news { background: var(--green-light); color: var(--green); }
+  .badge-manual { background: var(--blue-light); color: var(--blue-mid); }
+  .pdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .p-hot { background: #EF4444; } .p-warm { background: #F59E0B; } .p-cool { background: #3B82F6; }
+  .has-notes-tag { font-size: 11px; color: var(--blue-mid); font-weight: 500; }
+  .lead-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .icon-btn { background: transparent; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; padding: 4px 7px; border-radius: 6px; }
+  .icon-btn:hover { background: var(--surface); color: var(--text); }
+  .notes-section { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gray-border); }
+  .notes-section textarea { width: 100%; font-size: 13px; font-family: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--surface); color: var(--text); resize: vertical; min-height: 68px; line-height: 1.5; }
+  .notes-section textarea:focus { outline: none; border-color: var(--blue-mid); }
+  .save-note-btn { margin-top: 6px; font-size: 12px; padding: 5px 14px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--bg); color: var(--text); cursor: pointer; font-weight: 500; }
+  .note-saved { font-size: 12px; color: var(--green); margin-left: 8px; }
+  .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+  .settings-panel { padding: 1.5rem; max-width: 580px; }
+  .settings-panel > h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .settings-panel > p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6; }
+  .setting-card { background: var(--bg); border: 1px solid var(--gray-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .setting-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .setting-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; min-height: 28px; }
+  .tag { display: inline-flex; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--gray-border); border-radius: 20px; padding: 3px 10px 3px 12px; font-size: 13px; }
+  .tag-remove { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 14px; line-height: 1; padding: 0; }
+  .tag-remove:hover { color: var(--red); }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--surface); color: var(--text); flex: 1; }
+  .input-row .add-tag-btn { font-size: 13px; padding: 6px 16px; border-radius: 8px; border: none; background: var(--blue); color: white; cursor: pointer; font-weight: 500; white-space: nowrap; }
+  .info-box { font-size: 12px; color: var(--text-muted); background: var(--blue-light); border-left: 3px solid var(--blue-mid); padding: 10px 14px; border-radius: 0 8px 8px 0; line-height: 1.6; margin-top: 4px; }
+  .auth-banner { background: var(--blue-light); border: 1px solid #B5D4F4; border-radius: 10px; padding: 14px 18px; margin: 1.5rem 1.5rem 0; font-size: 13px; line-height: 1.6; }
+  .auth-banner strong { color: var(--blue); }
+  .auth-banner input { font-size: 13px; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--gray-border); background: var(--bg); color: var(--text); margin: 6px 4px 0 0; width: 320px; max-width: 100%; }
+  .auth-banner button { font-size: 13px; padding: 5px 14px; border-radius: 6px; border: none; background: var(--blue); color: white; cursor: pointer; margin-top: 6px; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--bg); border-radius: 12px; border: 1px solid var(--gray-border); padding: 1.5rem; width: 100%; max-width: 440px; }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 500; }
+  .form-row input, .form-row select { width: 100%; font-size: 13px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--surface); color: var(--text); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+  .btn-primary { font-size: 13px; padding: 7px 20px; border-radius: 8px; border: none; background: var(--blue); color: white; cursor: pointer; font-weight: 600; }
+  .btn-cancel { font-size: 13px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--gray-border); background: transparent; color: var(--text-muted); cursor: pointer; }
+  .loading { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 14px; }
+  .error-msg { background: var(--red-light); border: 1px solid #F09595; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--red); margin: 1rem 1.5rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div><h1>Martin County Lead Tracker</h1><p id="header-sub">Loading leads...</p></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-total">-</div><div class="stat-label">total</div></div>
+      <div class="stat"><div class="stat-num" id="stat-open">-</div><div class="stat-label">open</div></div>
+      <div class="stat"><div class="stat-num" id="stat-done">-</div><div class="stat-label">done</div></div>
+    </div>
+  </div>
+  <div id="auth-section" style="display:none;">
+    <div class="auth-banner">
+      <strong>GitHub token needed</strong> to save notes and check off leads.<br>
+      Create one at github.com/settings/tokens with <code>repo</code> scope (contents read+write).<br>
+      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <button onclick="saveToken()">Save token</button>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">Stored in your browser only, never sent anywhere except GitHub.</span>
+    </div>
+  </div>
+  <div id="error-msg" class="error-msg" style="display:none;"></div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('leads',this)">Leads</button>
+    <button class="tab" onclick="switchTab('settings',this)">Settings</button>
+  </div>
+  <div id="view-leads" class="view active">
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search leads..." oninput="renderLeads()">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('open',this)">Open</button>
+      <button class="filter-btn" onclick="setFilter('done',this)">Done</button>
+      <button class="filter-btn" onclick="setFilter('gov',this)">DBPR</button>
+      <button class="filter-btn" onclick="setFilter('news',this)">News</button>
+      <button class="add-btn" onclick="openModal()">+ Add lead</button>
+    </div>
+    <div id="leads-container"><div class="loading">Loading leads from GitHub...</div></div>
+  </div>
+  <div id="view-settings" class="view">
+    <div class="settings-panel">
+      <h2>Scraper settings</h2>
+      <p>Add ZIP codes or cities and the scraper picks them up automatically next Monday. Changes are saved as settings.json in the repo.</p>
+      <div class="setting-card">
+        <h3>ZIP codes</h3>
+        <p>The scraper includes any DBPR business matching these ZIPs.</p>
+        <div class="tags" id="zip-tags"></div>
+        <div class="input-row"><input type="text" id="new-zip" placeholder="e.g. 34997" maxlength="5"><button class="add-tag-btn" onclick="addZip()">Add ZIP</button></div>
+      </div>
+      <div class="setting-card">
+        <h3>Cities</h3>
+        <p>Leads are filtered to businesses in these cities across all sources.</p>
+        <div class="tags" id="city-tags"></div>
+        <div class="input-row"><input type="text" id="new-city" placeholder="e.g. Port St. Lucie"><button class="add-tag-btn" onclick="addCity()">Add city</button></div>
+      </div>
+      <div class="info-box">Settings are saved to settings.json in the repo. The scraper reads this file at the start of each Monday run.</div>
+    </div>
+  </div>
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <h2>Add lead manually</h2>
+      <div class="form-row"><label>Business name</label><input type="text" id="f-name" placeholder="e.g. Joe's Taco Shack"></div>
+      <div class="form-row"><label>Address / city</label><input type="text" id="f-address" placeholder="e.g. 123 Ocean Blvd, Stuart"></div>
+      <div class="form-row"><label>Source</label><select id="f-source"><option>FL DBPR New Food License</option><option>Sunbiz LLC Filing</option><option>Google News</option><option>HometownNewsTC</option><option>Manual</option></select></div>
+      <div class="form-row"><label>Priority</label><select id="f-priority"><option value="hot">Hot</option><option value="warm">Warm</option><option value="cool">Cool</option></select></div>
+      <div class="form-row"><label>Notes</label><input type="text" id="f-notes" placeholder="Optional..."></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="addLead()">Add lead</button></div>
+    </div>
+  </div>
+</div>
+<script>
+const REPO='shanealee/martin-county-leads',API='https://api.github.com';
+const DEFAULT_ZIPS=['34994','34996','34997','34990','34991','34957','34956'];
+const DEFAULT_CITIES=['Stuart','Palm City','Jensen Beach','Hobe Sound','Indiantown','Port Salerno','Sewalls Point'];
+let leads=[],settings={zips:[],cities:[]},filter='all',expanded={},savedMsg={};
+let ghToken=localStorage.getItem('gh_token')||'',leadsFileSha='',settingsFileSha='';
+function saveToken(){ghToken=document.getElementById('token-input').value.trim();localStorage.setItem('gh_token',ghToken);document.getElementById('auth-section').style.display='none';init();}
+function authHeaders(){const h={'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};if(ghToken)h['Authorization']='token '+ghToken;return h;}
+function showError(msg){const el=document.getElementById('error-msg');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',6000);}
+function getISOWeek(d){const dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()+3-(dt.getDay()+6)%7);const w1=new Date(dt.getFullYear(),0,4);return dt.getFullYear()+'-W'+String(1+Math.round(((dt-w1)/86400000-3+(w1.getDay()+6)%7)/7)).padStart(2,'0');}
+function weekLabel(wk){if(!wk)return'This week';const[yr,w]=wk.split('-W');const j=new Date(+yr,0,4);const s=new Date(j.getTime()+(parseInt(w)-1)*7*86400000);s.setDate(s.getDate()-s.getDay()+1);const e=new Date(s.getTime()+6*86400000);const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});return wk===getISOWeek(new Date())?'This week: '+f(s)+'-'+f(e):'Week of '+f(s)+'-'+f(e);}
+function badgeClass(s){if(!s)return'badge-manual';if(s.includes('DBPR'))return'badge-gov';if(s.includes('Sunbiz'))return'badge-filing';if(['Google News','HometownNewsTC','BusinessDebut'].includes(s))return'badge-news';return'badge-manual';}
+function shortSrc(s){return{'FL DBPR New Food License':'DBPR','FL DBPR License Portal':'DBPR Portal','Sunbiz LLC Filing':'Sunbiz','Google News':'Google News','HometownNewsTC':'Hometown News','BusinessDebut':'BusinessDebut','Manual':'Manual'}[s]||s||'Manual';}
+async function loadLeads(){try{const r=await fetch(API+'/repos/'+REPO+'/contents/leads.json',{headers:authHeaders()});if(r.status===404){leads=[];return;}if(!r.ok)throw new Error('GitHub API '+r.status);const data=await r.json();leadsFileSha=data.sha;leads=JSON.parse(atob(data.content.replace(/\n/g,'')));}catch(e){if(!ghToken)document.getElementById('auth-section').style.display='block';else showError('Could not load leads: '+e.message);leads=[];}}
+async function saveLeads(){if(!ghToken){document.getElementById('auth-section').style.display='block';return;}try{const body={message:'Update leads.json',content:btoa(unescape(encodeURIComponent(JSON.stringify(leads,null,2)))),sha:leadsFileSha||undefined};if(!leadsFileSha)delete body.sha;const r=await fetch(API+'/repos/'+REPO+'/contents/leads.json',{method:'PUT',headers:authHeaders(),body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());const data=await r.json();leadsFileSha=data.content.sha;}catch(e){showError('Could not save: '+e.message);}}
+async function loadSettings(){try{const r=await fetch(API+'/repos/'+REPO+'/contents/settings.json',{headers:authHeaders()});if(r.status===404){settings={zips:[...DEFAULT_ZIPS],cities:[...DEFAULT_CITIES]};return;}const data=await r.json();settingsFileSha=data.sha;settings=JSON.parse(atob(data.content.replace(/\n/g,'')));if(!settings.zips)settings.zips=[...DEFAULT_ZIPS];if(!settings.cities)settings.cities=[...DEFAULT_CITIES];}catch(e){settings={zips:[...DEFAULT_ZIPS],cities:[...DEFAULT_CITIES]};}}
+async function saveSettings(){if(!ghToken){document.getElementById('auth-section').style.display='block';return;}try{const body={message:'Update settings.json',content:btoa(unescape(encodeURIComponent(JSON.stringify(settings,null,2)))),sha:settingsFileSha||undefined};if(!settingsFileSha)delete body.sha;const r=await fetch(API+'/repos/'+REPO+'/contents/settings.json',{method:'PUT',headers:authHeaders(),body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());const data=await r.json();settingsFileSha=data.content.sha;}catch(e){showError('Could not save settings: '+e.message);}}
+function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));el.classList.add('active');document.getElementById('view-'+name).classList.add('active');if(name==='settings')renderSettings();}
+function setFilter(f,el){filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderLeads();}
+function toggleCheck(id){const l=leads.find(x=>x.id===id);if(!l)return;l.checked=!l.checked;renderLeads();saveLeads();}
+function toggleExpand(id){expanded[id]=!expanded[id];renderLeads();}
+function saveNote(id){const ta=document.getElementById('note-'+id);if(!ta)return;const l=leads.find(x=>x.id===id);if(!l)return;l.notes=ta.value;savedMsg[id]=true;renderLeads();saveLeads();setTimeout(()=>{delete savedMsg[id];renderLeads();},2000);}
+function deleteLead(id){if(!confirm('Remove this lead?'))return;leads=leads.filter(x=>x.id!==id);renderLeads();saveLeads();}
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function addLead(){const name=document.getElementById('f-name').value.trim();if(!name)return;const now=new Date();leads.unshift({id:Date.now().toString(),name,address:document.getElementById('f-address').value.trim(),source:document.getElementById('f-source').value,priority:document.getElementById('f-priority').value,notes:document.getElementById('f-notes').value.trim(),checked:false,status:'Manual entry',date:now.toISOString().split('T')[0],week:getISOWeek(now)});renderLeads();saveLeads();closeModal();['f-name','f-address','f-notes'].forEach(id=>document.getElementById(id).value='');}
+function getFiltered(){const q=(document.getElementById('search')?.value||'').toLowerCase();return leads.filter(l=>{if(filter==='open'&&l.checked)return false;if(filter==='done'&&!l.checked)return false;if(filter==='gov'&&!l.source?.includes('DBPR')&&!l.source?.includes('Sunbiz'))return false;if(filter==='news'&&!['Google News','HometownNewsTC','BusinessDebut'].includes(l.source))return false;if(q&&!l.name?.toLowerCase().includes(q)&&!(l.address||'').toLowerCase().includes(q)&&!(l.notes||'').toLowerCase().includes(q))return false;return true;});}
+function renderLeads(){const total=leads.length,done=leads.filter(l=>l.checked).length;document.getElementById('stat-total').textContent=total;document.getElementById('stat-open').textContent=total-done;document.getElementById('stat-done').textContent=done;const nowWk=getISOWeek(new Date());const twc=leads.filter(l=>l.week===nowWk).length;document.getElementById('header-sub').textContent=twc+' new lead'+(twc!==1?'s':'')+' '+weekLabel(nowWk).toLowerCase();const filtered=getFiltered();const grouped={};filtered.forEach(l=>{(grouped[l.week]=grouped[l.week]||[]).push(l);});const weeks=Object.keys(grouped).sort().reverse();let html='';if(!filtered.length){html='<div class="empty-state"><p>No leads match your filter.</p></div>';}else{weeks.forEach(wk=>{html+='<div class="week-section"><div class="week-label">'+weekLabel(wk)+'</div><div class="leads-list">';grouped[wk].forEach(l=>{const exp=expanded[l.id];html+='<div class="lead-card'+(l.checked?' checked':'')+'"><div class="lead-top"><button class="check-btn'+(l.checked?' done':'')+'" onclick="toggleCheck(''+l.id+'')"></button><div class="lead-body"><div class="lead-name">'+(l.name||'Unknown')+'</div><div class="lead-meta"><span class="badge '+badgeClass(l.source)+'">'+shortSrc(l.source)+'</span><div class="pdot p-'+(l.priority||'warm')+'" title="Priority: '+(l.priority||'warm')+'"></div>'+(l.address?'<span>'+l.address+'</span>':'')+(l.notes?'<span class="has-notes-tag">has notes</span>':'')+'</div></div><div class="lead-actions"><button class="icon-btn" onclick="toggleExpand(''+l.id+'')">'+(exp?'▲':'▼')+'</button><button class="icon-btn" onclick="deleteLead(''+l.id+'')">✕</button></div></div>'+(exp?'<div class="notes-section"><textarea id="note-'+l.id+'" placeholder="Call status, POS system, who you spoke to, follow-up date...">'+(l.notes||'')+'</textarea><div><button class="save-note-btn" onclick="saveNote(''+l.id+'')">Save note</button>'+(savedMsg[l.id]?'<span class="note-saved">Saved</span>':'')+'</div></div>':'')+'</div>';});html+='</div></div>';});}document.getElementById('leads-container').innerHTML=html;}
+function renderSettings(){document.getElementById('zip-tags').innerHTML=settings.zips.map(z=>'<div class="tag">'+z+'<button class="tag-remove" onclick="removeZip(''+z+'')">x</button></div>').join('')||'<span style="font-size:13px;color:var(--text-muted)">No ZIPs yet</span>';document.getElementById('city-tags').innerHTML=settings.cities.map(c=>'<div class="tag">'+c+'<button class="tag-remove" onclick="removeCity(''+c+'')">x</button></div>').join('')||'<span style="font-size:13px;color:var(--text-muted)">No cities yet</span>';}
+function addZip(){const val=document.getElementById('new-zip').value.trim();if(!/^\d{5}$/.test(val)){alert('Please enter a valid 5-digit ZIP code.');return;}if(!settings.zips.includes(val)){settings.zips.push(val);saveSettings();renderSettings();}document.getElementById('new-zip').value='';}
+function removeZip(z){settings.zips=settings.zips.filter(x=>x!==z);saveSettings();renderSettings();}
+function addCity(){const val=document.getElementById('new-city').value.trim();if(!val)return;if(!settings.cities.includes(val)){settings.cities.push(val);saveSettings();renderSettings();}document.getElementById('new-city').value='';}
+function removeCity(c){settings.cities=settings.cities.filter(x=>x!==c);saveSettings();renderSettings();}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+async function init(){document.getElementById('leads-container').innerHTML='<div class="loading">Loading...</div>';await Promise.all([loadLeads(),loadSettings()]);renderLeads();}
+init();
+</script>
+</body>
+</html>
